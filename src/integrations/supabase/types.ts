@@ -30,6 +30,75 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_questions: {
+        Row: {
+          age_group: string
+          correct_answer: number
+          created_at: string
+          id: string
+          options: Json
+          scenario_description: string
+          scenario_number: number
+          scenario_title: string
+          theme: string
+        }
+        Insert: {
+          age_group: string
+          correct_answer: number
+          created_at?: string
+          id?: string
+          options: Json
+          scenario_description: string
+          scenario_number: number
+          scenario_title: string
+          theme: string
+        }
+        Update: {
+          age_group?: string
+          correct_answer?: number
+          created_at?: string
+          id?: string
+          options?: Json
+          scenario_description?: string
+          scenario_number?: number
+          scenario_title?: string
+          theme?: string
+        }
+        Relationships: []
+      }
+      assessment_results: {
+        Row: {
+          age_group: string
+          completed_at: string
+          correct_answers: number
+          id: string
+          responses: Json
+          risk_level: string
+          score_percentage: number
+          total_questions: number
+        }
+        Insert: {
+          age_group: string
+          completed_at?: string
+          correct_answers: number
+          id?: string
+          responses: Json
+          risk_level: string
+          score_percentage: number
+          total_questions: number
+        }
+        Update: {
+          age_group?: string
+          completed_at?: string
+          correct_answers?: number
+          id?: string
+          responses?: Json
+          risk_level?: string
+          score_percentage?: number
+          total_questions?: number
+        }
+        Relationships: []
+      }
       chat_sessions: {
         Row: {
           child_age: number | null
