@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { AgeGroupSelection } from '@/components/AgeGroupSelection';
 import { AssessmentQuiz } from '@/components/AssessmentQuiz';
 import { AssessmentResults } from '@/components/AssessmentResults';
+import { AuthPage } from '@/components/AuthPage';
+import { ProfileCompletion } from '@/components/ProfileCompletion';
+import { useAuth } from '@/hooks/useAuth';
 
 type AgeGroup = '13-17' | '18-30' | '31-60' | '61-90';
 
@@ -18,9 +21,33 @@ export interface AssessmentResult {
 }
 
 const Index = () => {
-  const [currentStep, setCurrentStep] = useState<'age-selection' | 'quiz' | 'results'>('age-selection');
+  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'age-selection' | 'quiz' | 'results'>('auth');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | null>(null);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
+  const { user, session, loading } = useAuth();
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-300 text-xl">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth page if not authenticated
+  if (!user || !session) {
+    return <AuthPage />;
+  }
+
+  // Check if profile is complete
+  const isProfileComplete = user.user_metadata?.name && user.user_metadata?.phone;
+  if (!isProfileComplete && currentStep !== 'profile') {
+    return <ProfileCompletion onComplete={() => setCurrentStep('age-selection')} />;
+  }
 
   const handleAgeGroupSelect = (ageGroup: AgeGroup) => {
     setSelectedAgeGroup(ageGroup);
@@ -35,6 +62,16 @@ const Index = () => {
   const handleRestart = () => {
     setCurrentStep('age-selection');
     setSelectedAgeGroup(null);
+    setAssessmentResult(null);
+  };
+
+  const handleBackToAgeSelection = () => {
+    setCurrentStep('age-selection');
+    setSelectedAgeGroup(null);
+  };
+
+  const handleBackToQuiz = () => {
+    setCurrentStep('quiz');
     setAssessmentResult(null);
   };
 
@@ -78,6 +115,7 @@ const Index = () => {
           <AssessmentQuiz 
             ageGroup={selectedAgeGroup} 
             onComplete={handleQuizComplete}
+            onBack={handleBackToAgeSelection}
           />
         )}
         
@@ -85,6 +123,7 @@ const Index = () => {
           <AssessmentResults 
             result={assessmentResult} 
             onRestart={handleRestart}
+            onBack={handleBackToQuiz}
           />
         )}
       </div>

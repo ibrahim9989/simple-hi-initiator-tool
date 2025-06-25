@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Shield, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Shield, ChevronRight, AlertTriangle, ChevronLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AssessmentResult } from '@/pages/Index';
 
@@ -22,9 +22,10 @@ interface Question {
 interface AssessmentQuizProps {
   ageGroup: AgeGroup;
   onComplete: (result: AssessmentResult) => void;
+  onBack: () => void;
 }
 
-export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComplete }) => {
+export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComplete, onBack }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -48,7 +49,17 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       if (error) throw error;
       
       if (data) {
-        setQuestions(data);
+        // Transform the data to match our Question interface
+        const transformedQuestions: Question[] = data.map(item => ({
+          id: item.id,
+          theme: item.theme,
+          scenario_number: item.scenario_number,
+          scenario_title: item.scenario_title,
+          scenario_description: item.scenario_description,
+          options: Array.isArray(item.options) ? item.options : [],
+          correct_answer: item.correct_answer
+        }));
+        setQuestions(transformedQuestions);
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -59,12 +70,17 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
 
   const handleAnswerSelect = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
+    // Auto-advance to next question after 1 second
+    setTimeout(() => {
+      handleNextQuestion(answerIndex);
+    }, 1000);
   };
 
-  const handleNextQuestion = () => {
-    if (selectedAnswer === null) return;
+  const handleNextQuestion = (answerIndex?: number) => {
+    const answer = answerIndex !== undefined ? answerIndex : selectedAnswer;
+    if (answer === null) return;
 
-    const newAnswers = [...userAnswers, selectedAnswer];
+    const newAnswers = [...userAnswers, answer];
     setUserAnswers(newAnswers);
 
     if (currentQuestionIndex < questions.length - 1) {
@@ -72,6 +88,15 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       setSelectedAnswer(null);
     } else {
       submitAssessment(newAnswers);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setSelectedAnswer(userAnswers[currentQuestionIndex - 1] || null);
+      // Remove the last answer from userAnswers
+      setUserAnswers(prev => prev.slice(0, -1));
     }
   };
 
@@ -111,7 +136,19 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
 
       if (error) throw error;
 
-      onComplete(data);
+      // Transform the response to match AssessmentResult interface
+      const result: AssessmentResult = {
+        id: data.id,
+        age_group: data.age_group,
+        total_questions: data.total_questions,
+        correct_answers: data.correct_answers,
+        score_percentage: data.score_percentage,
+        responses: Array.isArray(data.responses) ? data.responses : [],
+        risk_level: data.risk_level,
+        completed_at: data.completed_at
+      };
+
+      onComplete(result);
     } catch (error) {
       console.error('Error submitting assessment:', error);
     } finally {
@@ -145,13 +182,24 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen">
+    <div className="container mx-auto px-4 py-4 md:py-8 min-h-screen">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">
-            Cyrex Assessment
-          </h1>
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+            <h1 className="text-xl md:text-3xl font-bold text-white">
+              Cyrex Assessment
+            </h1>
+          </div>
           <div className="text-gray-400">
             {currentQuestionIndex + 1} / {questions.length}
           </div>
@@ -160,11 +208,11 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       </div>
 
       {/* Question Card */}
-      <Card className="bg-slate-800/50 border-slate-700 mb-8">
-        <div className="p-6 md:p-8">
+      <Card className="bg-slate-800/50 border-slate-700 mb-6">
+        <div className="p-4 md:p-8">
           {/* Theme and Title */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="mb-4 md:mb-6">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm font-medium">
                 {currentQuestion.theme}
               </span>
@@ -172,28 +220,28 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
                 Scenario {currentQuestion.scenario_number}
               </span>
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-4">
+            <h2 className="text-lg md:text-2xl font-bold text-white mb-4">
               {currentQuestion.scenario_title}
             </h2>
           </div>
 
           {/* Scenario Description */}
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <div className="bg-slate-700/50 rounded-lg p-4 md:p-6 border-l-4 border-purple-500">
-              <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+              <p className="text-gray-300 leading-relaxed whitespace-pre-line text-sm md:text-base">
                 {currentQuestion.scenario_description}
               </p>
             </div>
           </div>
 
           {/* Answer Options */}
-          <div className="space-y-4 mb-8">
+          <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
             <p className="text-white font-medium mb-4">What would you do?</p>
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
                 onClick={() => handleAnswerSelect(index + 1)}
-                className={`w-full p-4 text-left rounded-lg border-2 transition-all duration-200 ${
+                className={`w-full p-3 md:p-4 text-left rounded-lg border-2 transition-all duration-200 ${
                   selectedAnswer === index + 1
                     ? 'border-purple-500 bg-purple-500/20 text-white'
                     : 'border-slate-600 bg-slate-700/30 text-gray-300 hover:border-slate-500 hover:bg-slate-700/50'
@@ -209,29 +257,31 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
                       <div className="w-2 h-2 bg-white rounded-full" />
                     )}
                   </div>
-                  <p className="leading-relaxed">{option}</p>
+                  <p className="leading-relaxed text-sm md:text-base">{option}</p>
                 </div>
               </button>
             ))}
           </div>
 
-          {/* Next Button */}
-          <Button
-            onClick={handleNextQuestion}
-            disabled={selectedAnswer === null || submitting}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? (
-              'Submitting...'
-            ) : currentQuestionIndex === questions.length - 1 ? (
-              'Complete Assessment'
-            ) : (
-              <>
-                Next Question
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </>
+          {/* Navigation Buttons */}
+          <div className="flex justify-between">
+            <Button
+              onClick={handlePreviousQuestion}
+              disabled={currentQuestionIndex === 0}
+              variant="outline"
+              className="border-slate-600 text-gray-300 hover:bg-slate-700/50 disabled:opacity-50"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
+
+            {submitting && (
+              <div className="flex items-center text-gray-400">
+                <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
+                Submitting...
+              </div>
             )}
-          </Button>
+          </div>
         </div>
       </Card>
     </div>

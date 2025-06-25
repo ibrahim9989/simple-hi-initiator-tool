@@ -11,13 +11,15 @@ import {
   RotateCcw,
   Trophy,
   Target,
-  BookOpen
+  BookOpen,
+  ChevronLeft
 } from 'lucide-react';
 import { AssessmentResult } from '@/pages/Index';
 
 interface AssessmentResultsProps {
   result: AssessmentResult;
   onRestart: () => void;
+  onBack: () => void;
 }
 
 const getRiskLevelConfig = (riskLevel: string) => {
@@ -84,16 +86,27 @@ const getScoreMessage = (percentage: number) => {
   return "Urgent cybersecurity training required.";
 };
 
-export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, onRestart }) => {
+export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, onRestart, onBack }) => {
   const riskConfig = getRiskLevelConfig(result.risk_level);
   const IconComponent = riskConfig.icon;
   const scoreMessage = getScoreMessage(result.score_percentage);
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen">
+    <div className="container mx-auto px-4 py-4 md:py-8 min-h-screen">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+      <div className="text-center mb-6 md:mb-8">
+        <div className="flex items-center justify-center mb-4">
+          <Button
+            onClick={onBack}
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 hover:text-white absolute left-4 top-4"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1" />
+            Back
+          </Button>
+        </div>
+        <h1 className="text-2xl md:text-4xl font-bold text-white mb-4">
           Assessment Complete
         </h1>
         <p className="text-gray-400">
@@ -102,43 +115,43 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
       </div>
 
       {/* Main Results Card */}
-      <Card className={`bg-slate-800/50 border-2 ${riskConfig.borderColor} mb-8 overflow-hidden`}>
+      <Card className={`bg-slate-800/50 border-2 ${riskConfig.borderColor} mb-6 md:mb-8 overflow-hidden`}>
         <div className={`h-2 bg-gradient-to-r ${riskConfig.gradient}`} />
-        <div className="p-6 md:p-8">
+        <div className="p-4 md:p-8">
           {/* Risk Level Header */}
-          <div className="flex items-center justify-center mb-6">
-            <div className={`p-4 rounded-full ${riskConfig.bgColor} mr-4`}>
-              <IconComponent className={`w-12 h-12 ${riskConfig.color}`} />
+          <div className="flex flex-col md:flex-row items-center justify-center mb-6 text-center md:text-left">
+            <div className={`p-4 rounded-full ${riskConfig.bgColor} mb-4 md:mb-0 md:mr-4`}>
+              <IconComponent className={`w-8 h-8 md:w-12 md:h-12 ${riskConfig.color}`} />
             </div>
-            <div className="text-center">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+            <div>
+              <h2 className="text-xl md:text-3xl font-bold text-white mb-2">
                 {riskConfig.title}
               </h2>
-              <p className="text-gray-300">
+              <p className="text-gray-300 text-sm md:text-base">
                 {riskConfig.description}
               </p>
             </div>
           </div>
 
           {/* Score Display */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
-              <div className="w-28 h-28 rounded-full bg-slate-900 flex items-center justify-center">
-                <span className="text-3xl font-bold text-white">
+          <div className="text-center mb-6 md:mb-8">
+            <div className="inline-flex items-center justify-center w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
+              <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-slate-900 flex items-center justify-center">
+                <span className="text-2xl md:text-3xl font-bold text-white">
                   {Math.round(result.score_percentage)}%
                 </span>
               </div>
             </div>
-            <p className="text-xl text-gray-300 mb-2">
+            <p className="text-lg md:text-xl text-gray-300 mb-2">
               {result.correct_answers} out of {result.total_questions} correct
             </p>
-            <p className="text-gray-400">
+            <p className="text-gray-400 text-sm md:text-base">
               {scoreMessage}
             </p>
           </div>
 
           {/* Progress Bar */}
-          <div className="mb-8">
+          <div className="mb-6 md:mb-8">
             <div className="flex justify-between text-sm text-gray-400 mb-2">
               <span>Score</span>
               <span>{Math.round(result.score_percentage)}%</span>
@@ -152,54 +165,54 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
       </Card>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-slate-800/50 border-slate-700 p-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <Card className="bg-slate-800/50 border-slate-700 p-4 md:p-6">
           <div className="flex items-center mb-4">
-            <Trophy className="w-8 h-8 text-yellow-400 mr-3" />
+            <Trophy className="w-6 h-6 md:w-8 md:h-8 text-yellow-400 mr-3" />
             <div>
               <p className="text-gray-400 text-sm">Correct Answers</p>
-              <p className="text-2xl font-bold text-white">{result.correct_answers}</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{result.correct_answers}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700 p-6">
+        <Card className="bg-slate-800/50 border-slate-700 p-4 md:p-6">
           <div className="flex items-center mb-4">
-            <Target className="w-8 h-8 text-blue-400 mr-3" />
+            <Target className="w-6 h-6 md:w-8 md:h-8 text-blue-400 mr-3" />
             <div>
               <p className="text-gray-400 text-sm">Total Questions</p>
-              <p className="text-2xl font-bold text-white">{result.total_questions}</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{result.total_questions}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700 p-6">
+        <Card className="bg-slate-800/50 border-slate-700 p-4 md:p-6">
           <div className="flex items-center mb-4">
-            <BookOpen className="w-8 h-8 text-purple-400 mr-3" />
+            <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-purple-400 mr-3" />
             <div>
               <p className="text-gray-400 text-sm">Risk Level</p>
-              <p className={`text-2xl font-bold ${riskConfig.color}`}>{result.risk_level}</p>
+              <p className={`text-xl md:text-2xl font-bold ${riskConfig.color}`}>{result.risk_level}</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Recommendations */}
-      <Card className="bg-slate-800/50 border-slate-700 mb-8">
-        <div className="p-6 md:p-8">
-          <h3 className="text-xl font-bold text-white mb-4">Recommendations</h3>
+      <Card className="bg-slate-800/50 border-slate-700 mb-6 md:mb-8">
+        <div className="p-4 md:p-8">
+          <h3 className="text-lg md:text-xl font-bold text-white mb-4">Recommendations</h3>
           <div className="space-y-4">
             {result.risk_level === 'Critical' && (
               <>
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
-                  <p className="text-gray-300">
+                  <p className="text-gray-300 text-sm md:text-base">
                     Consider taking a comprehensive cybersecurity awareness course immediately.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
-                  <p className="text-gray-300">
+                  <p className="text-gray-300 text-sm md:text-base">
                     Be extra cautious when receiving unsolicited calls, messages, or emails.
                   </p>
                 </div>
@@ -210,13 +223,13 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
               <>
                 <div className="flex items-start gap-3">
                   <Shield className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
-                  <p className="text-gray-300">
+                  <p className="text-gray-300 text-sm md:text-base">
                     Review common scam patterns and practice identifying red flags.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Shield className="w-5 h-5 text-orange-400 mt-1 flex-shrink-0" />
-                  <p className="text-gray-300">
+                  <p className="text-gray-300 text-sm md:text-base">
                     Always verify requests for personal information through official channels.
                   </p>
                 </div>
@@ -227,13 +240,13 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
               <>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
-                  <p className="text-gray-300">
+                  <p className="text-gray-300 text-sm md:text-base">
                     Keep up with the latest cybersecurity trends and threats.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
-                  <p className="text-gray-300">
+                  <p className="text-gray-300 text-sm md:text-base">
                     Share your knowledge with friends and family to help them stay safe online.
                   </p>
                 </div>
