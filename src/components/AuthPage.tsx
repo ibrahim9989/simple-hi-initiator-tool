@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Shield, Mail, Lock, Chrome } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ export const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, signInWithGoogle } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +30,13 @@ export const AuthPage = () => {
       if (error) {
         toast({
           variant: "destructive",
-          title: "Authentication Error",
+          title: t('authenticationError'),
           description: error.message
         });
       } else if (!isLogin) {
         toast({
-          title: "Check your email",
-          description: "We've sent you a confirmation link."
+          title: t('checkYourEmail'),
+          description: t('confirmationLinkSent')
         });
       }
     } catch (error) {
@@ -55,7 +57,7 @@ export const AuthPage = () => {
       if (error) {
         toast({
           variant: "destructive",
-          title: "Google Sign-in Error",
+          title: t('googleSignInError'),
           description: error.message
         });
       }
@@ -95,10 +97,10 @@ export const AuthPage = () => {
               </h1>
             </div>
             <p className="text-gray-300 mb-2">
-              Cybersecurity Assessment Platform
+              {t('cybersecurityAssessmentPlatform')}
             </p>
             <p className="text-gray-400 text-sm">
-              {isLogin ? 'Sign in to your account' : 'Create your account'}
+              {isLogin ? t('signIn') : t('signUp')}
             </p>
           </div>
 
@@ -112,7 +114,7 @@ export const AuthPage = () => {
                 className="w-full mb-4 bg-white text-gray-900 hover:bg-gray-100 border-0"
               >
                 <Chrome className="w-4 h-4 mr-2" />
-                Continue with Google
+                {t('continueWithGoogle')}
               </Button>
 
               <div className="relative mb-4">
@@ -127,7 +129,7 @@ export const AuthPage = () => {
               {/* Email/Password Form */}
               <form onSubmit={handleEmailAuth} className="space-y-4">
                 <div>
-                  <Label htmlFor="email" className="text-white">Email</Label>
+                  <Label htmlFor="email" className="text-white">{t('email')}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
@@ -136,14 +138,14 @@ export const AuthPage = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10 bg-slate-700 border-slate-600 text-white"
-                      placeholder="Enter your email"
+                      placeholder={t('enterYourEmail')}
                       required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="password" className="text-white">Password</Label>
+                  <Label htmlFor="password" className="text-white">{t('password')}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
@@ -152,7 +154,7 @@ export const AuthPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 bg-slate-700 border-slate-600 text-white"
-                      placeholder="Enter your password"
+                      placeholder={t('enterYourPassword')}
                       required
                     />
                   </div>
@@ -163,7 +165,7 @@ export const AuthPage = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
-                  {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                  {loading ? t('loading') : (isLogin ? t('signIn') : t('signUp'))}
                 </Button>
               </form>
 
@@ -174,8 +176,8 @@ export const AuthPage = () => {
                   className="text-purple-400 hover:text-purple-300 text-sm"
                 >
                   {isLogin 
-                    ? "Don't have an account? Sign up" 
-                    : "Already have an account? Sign in"
+                    ? t('dontHaveAccount')
+                    : t('alreadyHaveAccount')
                   }
                 </button>
               </div>

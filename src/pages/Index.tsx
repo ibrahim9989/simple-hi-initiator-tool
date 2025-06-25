@@ -5,7 +5,10 @@ import { AssessmentQuiz } from '@/components/AssessmentQuiz';
 import { AssessmentResults } from '@/components/AssessmentResults';
 import { AuthPage } from '@/components/AuthPage';
 import { ProfileCompletion } from '@/components/ProfileCompletion';
+import { AssessmentHistory } from '@/components/AssessmentHistory';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { LanguageProvider } from '@/hooks/useLanguage';
 
 type AgeGroup = '13-17' | '18-30' | '31-60' | '61-90';
 
@@ -20,8 +23,8 @@ export interface AssessmentResult {
   completed_at: string;
 }
 
-const Index = () => {
-  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'age-selection' | 'quiz' | 'results'>('auth');
+const IndexContent = () => {
+  const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'age-selection' | 'quiz' | 'results' | 'history'>('auth');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | null>(null);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const { user, session, loading } = useAuth();
@@ -30,6 +33,7 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <LanguageSelector />
         <div className="text-center">
           <div className="animate-spin w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-300 text-xl">Loading...</p>
@@ -40,13 +44,23 @@ const Index = () => {
 
   // Show auth page if not authenticated
   if (!user || !session) {
-    return <AuthPage />;
+    return (
+      <>
+        <LanguageSelector />
+        <AuthPage />
+      </>
+    );
   }
 
   // Check if profile is complete
   const isProfileComplete = user.user_metadata?.name && user.user_metadata?.phone;
   if (!isProfileComplete && currentStep !== 'profile') {
-    return <ProfileCompletion onComplete={() => setCurrentStep('age-selection')} />;
+    return (
+      <>
+        <LanguageSelector />
+        <ProfileCompletion onComplete={() => setCurrentStep('age-selection')} />
+      </>
+    );
   }
 
   const handleAgeGroupSelect = (ageGroup: AgeGroup) => {
@@ -75,8 +89,18 @@ const Index = () => {
     setAssessmentResult(null);
   };
 
+  const handleViewHistory = () => {
+    setCurrentStep('history');
+  };
+
+  const handleBackFromHistory = () => {
+    setCurrentStep('age-selection');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      <LanguageSelector />
+      
       {/* Cosmic Background Effects */}
       <div className="fixed inset-0 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.3),rgba(255,255,255,0))]"></div>
@@ -108,7 +132,10 @@ const Index = () => {
       {/* Main Content */}
       <div className="relative z-10">
         {currentStep === 'age-selection' && (
-          <AgeGroupSelection onSelectAgeGroup={handleAgeGroupSelect} />
+          <AgeGroupSelection 
+            onSelectAgeGroup={handleAgeGroupSelect}
+            onViewHistory={handleViewHistory}
+          />
         )}
         
         {currentStep === 'quiz' && selectedAgeGroup && (
@@ -126,8 +153,20 @@ const Index = () => {
             onBack={handleBackToQuiz}
           />
         )}
+
+        {currentStep === 'history' && (
+          <AssessmentHistory onBack={handleBackFromHistory} />
+        )}
       </div>
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <LanguageProvider>
+      <IndexContent />
+    </LanguageProvider>
   );
 };
 

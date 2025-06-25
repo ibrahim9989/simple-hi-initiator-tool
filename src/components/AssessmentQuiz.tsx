@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Shield, ChevronRight, AlertTriangle, ChevronLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { AssessmentResult } from '@/pages/Index';
+import { useLanguage } from '@/hooks/useLanguage';
 
 type AgeGroup = '13-17' | '18-30' | '31-60' | '61-90';
 
@@ -32,6 +33,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     fetchQuestions();
@@ -56,7 +58,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           scenario_number: item.scenario_number,
           scenario_title: item.scenario_title,
           scenario_description: item.scenario_description,
-          options: Array.isArray(item.options) ? item.options : [],
+          options: Array.isArray(item.options) ? item.options.map(option => String(option)) : [],
           correct_answer: item.correct_answer
         }));
         setQuestions(transformedQuestions);
@@ -161,7 +163,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       <div className="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Shield className="w-16 h-16 text-purple-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-300 text-xl">Loading assessment...</p>
+          <p className="text-gray-300 text-xl">{t('loadingAssessment')}</p>
         </div>
       </div>
     );
@@ -172,7 +174,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       <div className="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-          <p className="text-gray-300 text-xl">No questions available for this age group.</p>
+          <p className="text-gray-300 text-xl">{t('noQuestionsAvailable')}</p>
         </div>
       </div>
     );
@@ -194,10 +196,10 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
               className="text-gray-400 hover:text-white"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
+              {t('back')}
             </Button>
             <h1 className="text-xl md:text-3xl font-bold text-white">
-              Cyrex Assessment
+              {t('cyrexAssessment')}
             </h1>
           </div>
           <div className="text-gray-400">
@@ -214,14 +216,14 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           <div className="mb-4 md:mb-6">
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm font-medium">
-                {currentQuestion.theme}
+                {t(currentQuestion.theme.toLowerCase().replace(/\s+/g, ''))}
               </span>
               <span className="text-gray-400 text-sm">
-                Scenario {currentQuestion.scenario_number}
+                {t('scenario')} {currentQuestion.scenario_number}
               </span>
             </div>
             <h2 className="text-lg md:text-2xl font-bold text-white mb-4">
-              {currentQuestion.scenario_title}
+              {t(currentQuestion.scenario_title.toLowerCase().replace(/\s+/g, ''))}
             </h2>
           </div>
 
@@ -229,14 +231,14 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           <div className="mb-6 md:mb-8">
             <div className="bg-slate-700/50 rounded-lg p-4 md:p-6 border-l-4 border-purple-500">
               <p className="text-gray-300 leading-relaxed whitespace-pre-line text-sm md:text-base">
-                {currentQuestion.scenario_description}
+                {t(currentQuestion.scenario_description.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50))}
               </p>
             </div>
           </div>
 
           {/* Answer Options */}
           <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
-            <p className="text-white font-medium mb-4">What would you do?</p>
+            <p className="text-white font-medium mb-4">{t('whatWouldYouDo')}</p>
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
@@ -272,13 +274,13 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
               className="border-slate-600 text-gray-300 hover:bg-slate-700/50 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
-              Previous
+              {t('previous')}
             </Button>
 
             {submitting && (
               <div className="flex items-center text-gray-400">
                 <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
-                Submitting...
+                {t('submitting')}
               </div>
             )}
           </div>
