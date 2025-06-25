@@ -1,11 +1,17 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
 export const LanguageSelector: React.FC = () => {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -14,27 +20,44 @@ export const LanguageSelector: React.FC = () => {
     { code: 'ur', name: 'اردو', flag: '🇵🇰' }
   ];
 
+  const currentLanguage = languages.find(lang => lang.code === language);
+
   return (
     <div className="fixed top-4 right-4 z-50">
-      <div className="flex items-center gap-2 bg-slate-800/80 backdrop-blur-sm rounded-lg p-2 border border-slate-700">
-        <Globe className="w-4 h-4 text-gray-400" />
-        {languages.map((lang) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button
-            key={lang.code}
-            onClick={() => setLanguage(lang.code as any)}
-            variant={language === lang.code ? "default" : "ghost"}
+            variant="outline"
             size="sm"
-            className={`text-xs px-2 py-1 h-auto ${
-              language === lang.code 
-                ? 'bg-purple-600 text-white' 
-                : 'text-gray-400 hover:text-white hover:bg-slate-700'
-            }`}
+            className="bg-slate-800/90 backdrop-blur-sm border-slate-600 text-gray-300 hover:bg-slate-700/90 hover:text-white h-10 px-3"
           >
-            <span className="mr-1">{lang.flag}</span>
-            {lang.name}
+            <Globe className="w-4 h-4 mr-2" />
+            <span className="mr-1">{currentLanguage?.flag}</span>
+            <span className="hidden sm:inline">{currentLanguage?.name}</span>
+            <span className="sm:hidden">{currentLanguage?.code.toUpperCase()}</span>
           </Button>
-        ))}
-      </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="end" 
+          className="bg-slate-800/95 backdrop-blur-sm border-slate-600 z-[100]"
+        >
+          {languages.map((lang) => (
+            <DropdownMenuItem
+              key={lang.code}
+              onClick={() => setLanguage(lang.code as any)}
+              className={`cursor-pointer text-gray-300 hover:bg-slate-700/50 hover:text-white focus:bg-slate-700/50 focus:text-white ${
+                language === lang.code ? 'bg-purple-600/20 text-purple-300' : ''
+              }`}
+            >
+              <span className="mr-2">{lang.flag}</span>
+              {lang.name}
+              {language === lang.code && (
+                <span className="ml-auto text-purple-400">✓</span>
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
