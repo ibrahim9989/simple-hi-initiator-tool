@@ -12,9 +12,20 @@ import {
   Trophy,
   Target,
   BookOpen,
-  ChevronLeft
+  ChevronLeft,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { AssessmentResult } from '@/pages/Index';
+
+interface ScamResult {
+  scam_number: number;
+  theme: string;
+  total_questions: number;
+  correct_answers: number;
+  score_percentage: number;
+  risk_level: string;
+}
 
 interface AssessmentResultsProps {
   result: AssessmentResult;
@@ -91,6 +102,12 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
   const IconComponent = riskConfig.icon;
   const scoreMessage = getScoreMessage(result.score_percentage);
 
+  // Parse scam results from the database response
+  const scamResults: ScamResult[] = Array.isArray(result.responses) && 
+    typeof result.responses[0] === 'object' && 
+    'scam_results' in result.responses[0] 
+    ? result.responses[0].scam_results : [];
+
   return (
     <div className="container mx-auto px-4 py-4 md:py-8 min-h-screen">
       {/* Header */}
@@ -117,14 +134,14 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
       {/* Main Results Card */}
       <Card className={`bg-slate-800/50 border-2 ${riskConfig.borderColor} mb-6 md:mb-8 overflow-hidden`}>
         <div className={`h-2 bg-gradient-to-r ${riskConfig.gradient}`} />
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-6">
           {/* Risk Level Header */}
           <div className="flex flex-col md:flex-row items-center justify-center mb-6 text-center md:text-left">
             <div className={`p-4 rounded-full ${riskConfig.bgColor} mb-4 md:mb-0 md:mr-4`}>
               <IconComponent className={`w-8 h-8 md:w-12 md:h-12 ${riskConfig.color}`} />
             </div>
             <div>
-              <h2 className="text-xl md:text-3xl font-bold text-white mb-2">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
                 {riskConfig.title}
               </h2>
               <p className="text-gray-300 text-sm md:text-base">
@@ -133,36 +150,67 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
             </div>
           </div>
 
-          {/* Score Display */}
-          <div className="text-center mb-6 md:mb-8">
-            <div className="inline-flex items-center justify-center w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
-              <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-slate-900 flex items-center justify-center">
-                <span className="text-2xl md:text-3xl font-bold text-white">
+          {/* Overall Score Display */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 mb-4">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-slate-900 flex items-center justify-center">
+                <span className="text-xl md:text-2xl font-bold text-white">
                   {Math.round(result.score_percentage)}%
                 </span>
               </div>
             </div>
-            <p className="text-lg md:text-xl text-gray-300 mb-2">
-              {result.correct_answers} out of {result.total_questions} correct
+            <p className="text-lg text-gray-300 mb-2">
+              Overall Score: {result.correct_answers} out of {result.total_questions} correct
             </p>
-            <p className="text-gray-400 text-sm md:text-base">
+            <p className="text-gray-400 text-sm">
               {scoreMessage}
             </p>
           </div>
-
-          {/* Progress Bar */}
-          <div className="mb-6 md:mb-8">
-            <div className="flex justify-between text-sm text-gray-400 mb-2">
-              <span>Score</span>
-              <span>{Math.round(result.score_percentage)}%</span>
-            </div>
-            <Progress 
-              value={result.score_percentage} 
-              className="h-3"
-            />
-          </div>
         </div>
       </Card>
+
+      {/* Scam-wise Results */}
+      {scamResults.length > 0 && (
+        <div className="mb-6 md:mb-8">
+          <h3 className="text-xl md:text-2xl font-bold text-white mb-4 text-center">
+            Performance by Scam Type
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {scamResults.map((scam, index) => {
+              const scamRiskConfig = getRiskLevelConfig(scam.risk_level);
+              const ScamIcon = scamRiskConfig.icon;
+              
+              return (
+                <Card key={index} className={`bg-slate-800/50 border ${scamRiskConfig.borderColor} p-4`}>
+                  <div className="text-center">
+                    <div className={`inline-flex p-3 rounded-full ${scamRiskConfig.bgColor} mb-3`}>
+                      <ScamIcon className={`w-6 h-6 ${scamRiskConfig.color}`} />
+                    </div>
+                    <h4 className="font-bold text-white mb-2 text-sm">
+                      Scam {scam.scam_number}: {scam.theme}
+                    </h4>
+                    <div className="mb-3">
+                      <div className={`text-2xl font-bold ${scamRiskConfig.color} mb-1`}>
+                        {Math.round(scam.score_percentage)}%
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {scam.correct_answers}/{scam.total_questions} correct
+                      </div>
+                    </div>
+                    <Progress 
+                      value={scam.score_percentage} 
+                      className="h-2 mb-2"
+                    />
+                    <div className={`text-xs font-medium ${scamRiskConfig.color}`}>
+                      {scam.risk_level} Risk
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -199,7 +247,7 @@ export const AssessmentResults: React.FC<AssessmentResultsProps> = ({ result, on
 
       {/* Recommendations */}
       <Card className="bg-slate-800/50 border-slate-700 mb-6 md:mb-8">
-        <div className="p-4 md:p-8">
+        <div className="p-4 md:p-6">
           <h3 className="text-lg md:text-xl font-bold text-white mb-4">Recommendations</h3>
           <div className="space-y-4">
             {result.risk_level === 'Critical' && (

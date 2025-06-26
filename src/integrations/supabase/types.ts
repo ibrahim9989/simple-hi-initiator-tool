@@ -37,6 +37,7 @@ export type Database = {
           created_at: string
           id: string
           options: Json
+          scam_number: number
           scenario_description: string
           scenario_number: number
           scenario_title: string
@@ -48,6 +49,7 @@ export type Database = {
           created_at?: string
           id?: string
           options: Json
+          scam_number?: number
           scenario_description: string
           scenario_number: number
           scenario_title: string
@@ -59,6 +61,7 @@ export type Database = {
           created_at?: string
           id?: string
           options?: Json
+          scam_number?: number
           scenario_description?: string
           scenario_number?: number
           scenario_title?: string
@@ -74,6 +77,7 @@ export type Database = {
           id: string
           responses: Json
           risk_level: string
+          scam_results: Json | null
           score_percentage: number
           total_questions: number
         }
@@ -84,6 +88,7 @@ export type Database = {
           id?: string
           responses: Json
           risk_level: string
+          scam_results?: Json | null
           score_percentage: number
           total_questions: number
         }
@@ -94,6 +99,7 @@ export type Database = {
           id?: string
           responses?: Json
           risk_level?: string
+          scam_results?: Json | null
           score_percentage?: number
           total_questions?: number
         }

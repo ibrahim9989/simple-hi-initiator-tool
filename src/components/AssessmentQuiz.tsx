@@ -12,12 +12,22 @@ type AgeGroup = '13-17' | '18-30' | '31-60' | '61-90';
 
 interface Question {
   id: string;
+  scam_number: number;
   theme: string;
   scenario_number: number;
   scenario_title: string;
   scenario_description: string;
   options: string[];
   correct_answer: number;
+}
+
+interface ScamResult {
+  scam_number: number;
+  theme: string;
+  total_questions: number;
+  correct_answers: number;
+  score_percentage: number;
+  risk_level: string;
 }
 
 interface AssessmentQuizProps {
@@ -33,6 +43,8 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currentScam, setCurrentScam] = useState(1);
+  const [scamResults, setScamResults] = useState<ScamResult[]>([]);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -45,7 +57,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
         .from('assessment_questions')
         .select('*')
         .eq('age_group', ageGroup)
-        .order('theme', { ascending: true })
+        .order('scam_number', { ascending: true })
         .order('scenario_number', { ascending: true });
 
       if (error) throw error;
@@ -54,6 +66,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
         // Transform the data to match our Question interface
         const transformedQuestions: Question[] = data.map(item => ({
           id: item.id,
+          scam_number: item.scam_number,
           theme: item.theme,
           scenario_number: item.scenario_number,
           scenario_title: item.scenario_title,
@@ -62,6 +75,11 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           correct_answer: item.correct_answer
         }));
         setQuestions(transformedQuestions);
+        
+        // Set current scam based on first question
+        if (transformedQuestions.length > 0) {
+          setCurrentScam(transformedQuestions[0].scam_number);
+        }
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -85,9 +103,48 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
     const newAnswers = [...userAnswers, answer];
     setUserAnswers(newAnswers);
 
+    // Check if this is the end of current scam
+    const currentQuestion = questions[currentQuestionIndex];
+    const currentScamQuestions = questions.filter(q => q.scam_number === currentQuestion.scam_number);
+    const currentScamAnswers = newAnswers.slice(
+      questions.findIndex(q => q.scam_number === currentQuestion.scam_number),
+      questions.findIndex(q => q.scam_number === currentQuestion.scam_number) + currentScamQuestions.length
+    );
+
+    // If we completed current scam, calculate its result
+    if (currentScamAnswers.length === currentScamQuestions.length) {
+      const correctAnswers = currentScamQuestions.reduce((count, question, index) => {
+        return count + (currentScamAnswers[index] === question.correct_answer ? 1 : 0);
+      }, 0);
+
+      const scorePercentage = (correctAnswers / currentScamQuestions.length) * 100;
+      let riskLevel = 'Low';
+      if (scorePercentage < 40) riskLevel = 'Critical';
+      else if (scorePercentage < 60) riskLevel = 'High';
+      else if (scorePercentage < 80) riskLevel = 'Medium';
+
+      const scamResult: ScamResult = {
+        scam_number: currentQuestion.scam_number,
+        theme: currentQuestion.theme,
+        total_questions: currentScamQuestions.length,
+        correct_answers: correctAnswers,
+        score_percentage: scorePercentage,
+        risk_level: riskLevel
+      };
+
+      setScamResults(prev => [...prev, scamResult]);
+    }
+
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
       setSelectedAnswer(null);
+      
+      // Update current scam if we moved to next scam
+      const nextQuestion = questions[nextIndex];
+      if (nextQuestion.scam_number !== currentScam) {
+        setCurrentScam(nextQuestion.scam_number);
+      }
     } else {
       submitAssessment(newAnswers);
     }
@@ -95,10 +152,16 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
 
   const handlePreviousQuestion = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-      setSelectedAnswer(userAnswers[currentQuestionIndex - 1] || null);
+      const prevIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(prevIndex);
+      setSelectedAnswer(userAnswers[prevIndex] || null);
+      
       // Remove the last answer from userAnswers
       setUserAnswers(prev => prev.slice(0, -1));
+      
+      // Update current scam
+      const prevQuestion = questions[prevIndex];
+      setCurrentScam(prevQuestion.scam_number);
     }
   };
 
@@ -106,21 +169,21 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
     setSubmitting(true);
     
     try {
-      // Calculate score
-      let correctAnswers = 0;
+      // Calculate overall score
+      let totalCorrect = 0;
       answers.forEach((answer, index) => {
         if (answer === questions[index].correct_answer) {
-          correctAnswers++;
+          totalCorrect++;
         }
       });
 
-      const scorePercentage = (correctAnswers / questions.length) * 100;
+      const overallScore = (totalCorrect / questions.length) * 100;
       
-      // Determine risk level
-      let riskLevel = 'Low';
-      if (scorePercentage < 40) riskLevel = 'Critical';
-      else if (scorePercentage < 60) riskLevel = 'High';
-      else if (scorePercentage < 80) riskLevel = 'Medium';
+      // Determine overall risk level
+      let overallRiskLevel = 'Low';
+      if (overallScore < 40) overallRiskLevel = 'Critical';
+      else if (overallScore < 60) overallRiskLevel = 'High';
+      else if (overallScore < 80) overallRiskLevel = 'Medium';
 
       // Save to database
       const { data, error } = await supabase
@@ -128,10 +191,11 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
         .insert({
           age_group: ageGroup,
           total_questions: questions.length,
-          correct_answers: correctAnswers,
-          score_percentage: scorePercentage,
+          correct_answers: totalCorrect,
+          score_percentage: overallScore,
           responses: answers,
-          risk_level: riskLevel
+          risk_level: overallRiskLevel,
+          scam_results: scamResults
         })
         .select()
         .single();
@@ -182,6 +246,11 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  
+  // Get current scam progress
+  const currentScamQuestions = questions.filter(q => q.scam_number === currentScam);
+  const currentScamStartIndex = questions.findIndex(q => q.scam_number === currentScam);
+  const currentScamProgress = currentQuestionIndex - currentScamStartIndex + 1;
 
   return (
     <div className="container mx-auto px-4 py-4 md:py-8 min-h-screen">
@@ -207,6 +276,32 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           </div>
         </div>
         <Progress value={progress} className="w-full h-2" />
+        
+        {/* Scam Progress Indicator */}
+        <div className="mt-3 flex justify-center">
+          <div className="flex gap-2">
+            {[1, 2, 3].map(scamNum => (
+              <div
+                key={scamNum}
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  scamNum === currentScam
+                    ? 'bg-purple-600 text-white'
+                    : scamNum < currentScam
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-600 text-gray-300'
+                }`}
+              >
+                Scam {scamNum}
+                {scamNum === currentScam && (
+                  <span className="ml-1 opacity-75">
+                    ({currentScamProgress}/{currentScamQuestions.length})
+                  </span>
+                )}
+                {scamNum < currentScam && <span className="ml-1">✓</span>}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Question Card */}
@@ -216,14 +311,14 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           <div className="mb-4 md:mb-6">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="px-2 md:px-3 py-1 bg-purple-600 text-white rounded-full text-xs md:text-sm font-medium">
-                {t(currentQuestion.theme.toLowerCase().replace(/\s+/g, ''))}
+                {currentQuestion.theme}
               </span>
               <span className="text-gray-400 text-xs md:text-sm">
-                {t('scenario')} {currentQuestion.scenario_number}
+                Scam {currentScam} - Scenario {currentQuestion.scenario_number}
               </span>
             </div>
             <h2 className="text-base md:text-xl lg:text-2xl font-bold text-white mb-3 md:mb-4 leading-relaxed">
-              {t(currentQuestion.scenario_title.toLowerCase().replace(/\s+/g, ''))}
+              {currentQuestion.scenario_title}
             </h2>
           </div>
 
