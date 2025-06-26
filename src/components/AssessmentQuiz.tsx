@@ -53,6 +53,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
 
   const fetchQuestions = async () => {
     try {
+      console.log('Fetching questions for age group:', ageGroup);
       const { data, error } = await supabase
         .from('assessment_questions')
         .select('*')
@@ -60,9 +61,14 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
         .order('scam_number', { ascending: true })
         .order('scenario_number', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
-      if (data) {
+      console.log('Raw data from database:', data);
+      
+      if (data && data.length > 0) {
         // Transform the data to match our Question interface
         const transformedQuestions: Question[] = data.map(item => ({
           id: item.id,
@@ -74,12 +80,16 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           options: Array.isArray(item.options) ? item.options.map(option => String(option)) : [],
           correct_answer: item.correct_answer
         }));
+        
+        console.log('Transformed questions:', transformedQuestions);
         setQuestions(transformedQuestions);
         
         // Set current scam based on first question
         if (transformedQuestions.length > 0) {
           setCurrentScam(transformedQuestions[0].scam_number);
         }
+      } else {
+        console.log('No questions found for age group:', ageGroup);
       }
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -106,9 +116,10 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
     // Check if this is the end of current scam
     const currentQuestion = questions[currentQuestionIndex];
     const currentScamQuestions = questions.filter(q => q.scam_number === currentQuestion.scam_number);
+    const currentScamStartIndex = questions.findIndex(q => q.scam_number === currentQuestion.scam_number);
     const currentScamAnswers = newAnswers.slice(
-      questions.findIndex(q => q.scam_number === currentQuestion.scam_number),
-      questions.findIndex(q => q.scam_number === currentQuestion.scam_number) + currentScamQuestions.length
+      currentScamStartIndex,
+      currentScamStartIndex + currentScamQuestions.length
     );
 
     // If we completed current scam, calculate its result
@@ -185,6 +196,16 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       else if (overallScore < 60) overallRiskLevel = 'High';
       else if (overallScore < 80) overallRiskLevel = 'Medium';
 
+      // Convert ScamResult[] to plain objects to fix TypeScript error
+      const scamResultsData = scamResults.map(result => ({
+        scam_number: result.scam_number,
+        theme: result.theme,
+        total_questions: result.total_questions,
+        correct_answers: result.correct_answers,
+        score_percentage: result.score_percentage,
+        risk_level: result.risk_level
+      }));
+
       // Save to database
       const { data, error } = await supabase
         .from('assessment_results')
@@ -195,7 +216,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
           score_percentage: overallScore,
           responses: answers,
           risk_level: overallRiskLevel,
-          scam_results: scamResults
+          scam_results: scamResultsData
         })
         .select()
         .single();
@@ -239,6 +260,7 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
           <p className="text-gray-300 text-xl">{t('noQuestionsAvailable')}</p>
+          <p className="text-gray-400 text-sm mt-2">Age group: {ageGroup}</p>
         </div>
       </div>
     );
