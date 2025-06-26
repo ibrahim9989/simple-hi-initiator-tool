@@ -8,7 +8,6 @@ import { ProfileCompletion } from '@/components/ProfileCompletion';
 import { AssessmentHistory } from '@/components/AssessmentHistory';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useAuth } from '@/hooks/useAuth';
-import { LanguageProvider } from '@/hooks/useLanguage';
 
 type AgeGroup = '13-17' | '18-30' | '31-60' | '61-90';
 
@@ -23,11 +22,13 @@ export interface AssessmentResult {
   completed_at: string;
 }
 
-const IndexContent = () => {
+const Index = () => {
   const [currentStep, setCurrentStep] = useState<'auth' | 'profile' | 'age-selection' | 'quiz' | 'results' | 'history'>('auth');
   const [selectedAgeGroup, setSelectedAgeGroup] = useState<AgeGroup | null>(null);
   const [assessmentResult, setAssessmentResult] = useState<AssessmentResult | null>(null);
   const { user, session, loading } = useAuth();
+
+  console.log('Auth state:', { user: !!user, session: !!session, loading });
 
   // Show loading state while checking auth
   if (loading) {
@@ -54,13 +55,15 @@ const IndexContent = () => {
 
   // Check if profile is complete
   const isProfileComplete = user.user_metadata?.name && user.user_metadata?.phone;
-  if (!isProfileComplete && currentStep !== 'profile') {
-    return (
-      <>
-        <LanguageSelector />
-        <ProfileCompletion onComplete={() => setCurrentStep('age-selection')} />
-      </>
-    );
+  
+  // If profile is not complete and we're not already on profile step, show profile completion
+  if (!isProfileComplete && currentStep === 'auth') {
+    setCurrentStep('profile');
+  }
+  
+  // If profile is complete and we're still on auth step, move to age selection
+  if (isProfileComplete && currentStep === 'auth') {
+    setCurrentStep('age-selection');
   }
 
   const handleAgeGroupSelect = (ageGroup: AgeGroup) => {
@@ -94,6 +97,10 @@ const IndexContent = () => {
   };
 
   const handleBackFromHistory = () => {
+    setCurrentStep('age-selection');
+  };
+
+  const handleProfileComplete = () => {
     setCurrentStep('age-selection');
   };
 
@@ -131,6 +138,10 @@ const IndexContent = () => {
 
       {/* Main Content */}
       <div className="relative z-10">
+        {currentStep === 'profile' && (
+          <ProfileCompletion onComplete={handleProfileComplete} />
+        )}
+        
         {currentStep === 'age-selection' && (
           <AgeGroupSelection 
             onSelectAgeGroup={handleAgeGroupSelect}
@@ -159,14 +170,6 @@ const IndexContent = () => {
         )}
       </div>
     </div>
-  );
-};
-
-const Index = () => {
-  return (
-    <LanguageProvider>
-      <IndexContent />
-    </LanguageProvider>
   );
 };
 

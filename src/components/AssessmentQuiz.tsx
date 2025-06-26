@@ -186,9 +186,9 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
   return (
     <div className="container mx-auto px-4 py-4 md:py-8 min-h-screen">
       {/* Header */}
-      <div className="mb-6 md:mb-8">
+      <div className="mb-4 md:mb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Button
               onClick={onBack}
               variant="ghost"
@@ -198,11 +198,11 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
               <ChevronLeft className="w-4 h-4 mr-1" />
               {t('back')}
             </Button>
-            <h1 className="text-xl md:text-3xl font-bold text-white">
+            <h1 className="text-lg md:text-3xl font-bold text-white">
               {t('cyrexAssessment')}
             </h1>
           </div>
-          <div className="text-gray-400">
+          <div className="text-gray-400 text-sm md:text-base">
             {currentQuestionIndex + 1} / {questions.length}
           </div>
         </div>
@@ -210,35 +210,35 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
       </div>
 
       {/* Question Card */}
-      <Card className="bg-slate-800/50 border-slate-700 mb-6">
-        <div className="p-4 md:p-8">
+      <Card className="bg-slate-800/50 border-slate-700 mb-4 md:mb-6">
+        <div className="p-4 md:p-6 lg:p-8">
           {/* Theme and Title */}
           <div className="mb-4 md:mb-6">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm font-medium">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="px-2 md:px-3 py-1 bg-purple-600 text-white rounded-full text-xs md:text-sm font-medium">
                 {t(currentQuestion.theme.toLowerCase().replace(/\s+/g, ''))}
               </span>
-              <span className="text-gray-400 text-sm">
+              <span className="text-gray-400 text-xs md:text-sm">
                 {t('scenario')} {currentQuestion.scenario_number}
               </span>
             </div>
-            <h2 className="text-lg md:text-2xl font-bold text-white mb-4">
+            <h2 className="text-base md:text-xl lg:text-2xl font-bold text-white mb-3 md:mb-4 leading-relaxed">
               {t(currentQuestion.scenario_title.toLowerCase().replace(/\s+/g, ''))}
             </h2>
           </div>
 
           {/* Scenario Description */}
-          <div className="mb-6 md:mb-8">
-            <div className="bg-slate-700/50 rounded-lg p-4 md:p-6 border-l-4 border-purple-500">
-              <p className="text-gray-300 leading-relaxed whitespace-pre-line text-sm md:text-base">
-                {t(currentQuestion.scenario_description.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 50))}
+          <div className="mb-4 md:mb-6 lg:mb-8">
+            <div className="bg-slate-700/50 rounded-lg p-3 md:p-4 lg:p-6 border-l-4 border-purple-500">
+              <p className="text-gray-300 leading-relaxed text-sm md:text-base lg:text-lg whitespace-pre-line break-words">
+                {currentQuestion.scenario_description}
               </p>
             </div>
           </div>
 
           {/* Answer Options */}
-          <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
-            <p className="text-white font-medium mb-4">{t('whatWouldYouDo')}</p>
+          <div className="space-y-2 md:space-y-3 lg:space-y-4 mb-4 md:mb-6 lg:mb-8">
+            <p className="text-white font-medium mb-3 md:mb-4 text-sm md:text-base">{t('whatWouldYouDo')}</p>
             {currentQuestion.options.map((option, index) => (
               <button
                 key={index}
@@ -249,8 +249,8 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
                     : 'border-slate-600 bg-slate-700/30 text-gray-300 hover:border-slate-500 hover:bg-slate-700/50'
                 }`}
               >
-                <div className="flex items-start gap-3">
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 flex-shrink-0 ${
+                <div className="flex items-start gap-2 md:gap-3">
+                  <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
                     selectedAnswer === index + 1 
                       ? 'border-purple-500 bg-purple-500' 
                       : 'border-slate-500'
@@ -259,18 +259,19 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
                       <div className="w-2 h-2 bg-white rounded-full" />
                     )}
                   </div>
-                  <p className="leading-relaxed text-sm md:text-base">{option}</p>
+                  <p className="leading-relaxed text-sm md:text-base break-words whitespace-pre-line">{option}</p>
                 </div>
               </button>
             ))}
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center flex-wrap gap-2">
             <Button
               onClick={handlePreviousQuestion}
               disabled={currentQuestionIndex === 0}
               variant="outline"
+              size="sm"
               className="border-slate-600 text-gray-300 hover:bg-slate-700/50 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4 mr-2" />
@@ -278,8 +279,8 @@ export const AssessmentQuiz: React.FC<AssessmentQuizProps> = ({ ageGroup, onComp
             </Button>
 
             {submitting && (
-              <div className="flex items-center text-gray-400">
-                <div className="animate-spin w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
+              <div className="flex items-center text-gray-400 text-sm">
+                <div className="animate-spin w-4 h-4 md:w-5 md:h-5 border-2 border-purple-500 border-t-transparent rounded-full mr-2"></div>
                 {t('submitting')}
               </div>
             )}
